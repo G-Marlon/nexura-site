@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>SMYLLC — Guide de Déploiement & Configuration</title>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --black:#080808;--offblack:#111;--charcoal:#1a1a1a;--border:#2a2a2a;
+  --midgray:#555;--silver:#999;--light:#ddd;--white:#fafafa;
+  --gold:#c9a96e;--gold2:#e2c990;--success:#27ae60;--danger:#c0392b;--warn:#e67e22;--info:#2980b9;
+  --ff-d:'Georgia',serif;--ff-b:'Segoe UI','Helvetica Neue',sans-serif;
+}
+html{scroll-behavior:smooth}
+body{background:var(--black);color:var(--light);font-family:var(--ff-b);font-size:14px;line-height:1.7}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:var(--black)}::-webkit-scrollbar-thumb{background:var(--gold);border-radius:2px}
+
+/* NAV */
+.doc-nav{
+  position:fixed;top:0;left:0;right:0;z-index:100;
+  background:rgba(8,8,8,.96);backdrop-filter:blur(20px);
+  border-bottom:1px solid rgba(201,169,110,.15);
+  padding:1rem 3rem;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.doc-nav-logo{font-family:var(--ff-d);font-size:1.3rem;letter-spacing:.2em;color:var(--white)}
+.doc-nav-links{display:flex;gap:1.5rem}
+.doc-nav-links a{font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--silver);text-decoration:none;transition:color .2s}
+.doc-nav-links a:hover{color:var(--gold)}
+
+/* LAYOUT */
+.doc-sidebar{
+  position:fixed;top:60px;left:0;bottom:0;width:260px;
+  background:var(--offblack);border-right:1px solid var(--border);
+  overflow-y:auto;padding:1.5rem 0;
+}
+.doc-sidebar-section{padding:.3rem 0}
+.doc-sidebar-title{font-size:.55rem;letter-spacing:.3em;text-transform:uppercase;color:var(--midgray);padding:.5rem 1.5rem;margin-top:.5rem}
+.doc-sidebar-link{display:flex;align-items:center;gap:.6rem;padding:.5rem 1.5rem;font-size:.72rem;color:var(--silver);text-decoration:none;transition:all .15s;border-left:2px solid transparent}
+.doc-sidebar-link:hover{color:var(--white);background:rgba(255,255,255,.03)}
+.doc-sidebar-link.active{color:var(--gold);border-left-color:var(--gold);background:rgba(201,169,110,.06)}
+.doc-sidebar-link .step-num{width:18px;height:18px;border-radius:50%;background:var(--border);display:flex;align-items:center;justify-content:center;font-size:.55rem;flex-shrink:0}
+.doc-sidebar-link.done .step-num{background:var(--success);color:white}
+
+.doc-content{margin-left:260px;margin-top:60px;padding:3rem 4rem;max-width:900px}
+
+/* SECTIONS */
+.doc-section{margin-bottom:4rem;padding-top:1rem}
+.doc-section-header{display:flex;align-items:center;gap:1rem;margin-bottom:2rem;padding-bottom:1rem;border-bottom:1px solid rgba(201,169,110,.2)}
+.doc-section-num{width:36px;height:36px;background:var(--gold);color:var(--black);display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700;flex-shrink:0}
+.doc-section-title{font-family:var(--ff-d);font-size:1.6rem;font-weight:400;color:var(--white)}
+.doc-section-badge{font-size:.55rem;letter-spacing:.2em;text-transform:uppercase;padding:.25rem .7rem;border-radius:20px;font-weight:600}
+.badge-required{background:rgba(192,57,43,.2);color:#e74c3c;border:1px solid rgba(192,57,43,.3)}
+.badge-optional{background:rgba(39,174,96,.15);color:#27ae60;border:1px solid rgba(39,174,96,.25)}
+.badge-free{background:rgba(41,128,185,.15);color:#3498db;border:1px solid rgba(41,128,185,.25)}
+
+/* CARDS */
+.step-card{background:var(--charcoal);border:1px solid var(--border);padding:1.8rem;margin-bottom:1.2rem;position:relative}
+.step-card::before{content:'';position:absolute;top:0;left:0;bottom:0;width:3px}
+.step-card.critical::before{background:var(--danger)}
+.step-card.important::before{background:var(--warn)}
+.step-card.optional::before{background:var(--info)}
+.step-card.success::before{background:var(--success)}
+.step-card-title{font-size:.9rem;font-weight:600;color:var(--white);margin-bottom:.6rem;display:flex;align-items:center;gap:.7rem}
+.step-card-title svg{width:16px;height:16px;flex-shrink:0}
+.step-card-desc{font-size:.78rem;color:var(--silver);line-height:1.8;margin-bottom:1rem}
+.step-card-desc:last-child{margin-bottom:0}
+
+/* CODE BLOCKS */
+.code-block{background:#0d1117;border:1px solid rgba(255,255,255,.1);padding:1.2rem 1.5rem;font-family:'Courier New',monospace;font-size:.75rem;line-height:1.8;color:#e6edf3;overflow-x:auto;position:relative;margin:.8rem 0}
+.code-block .comment{color:#6e7681}
+.code-block .key{color:#79c0ff}
+.code-block .val{color:#a5d6ff}
+.code-block .str{color:#a5d6ff}
+.code-block .highlight{background:rgba(201,169,110,.15);border-left:3px solid var(--gold);display:block;padding-left:.5rem;margin-left:-.5rem}
+.copy-btn{position:absolute;top:.5rem;right:.5rem;background:rgba(255,255,255,.08);border:none;color:var(--silver);font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;padding:.3rem .7rem;cursor:pointer;transition:all .2s}
+.copy-btn:hover{background:var(--gold);color:var(--black)}
+
+/* ALERTS */
+.alert{display:flex;gap:.8rem;padding:1rem 1.2rem;margin:.8rem 0;border-radius:0;font-size:.75rem;line-height:1.7;border-left:3px solid}
+.alert.warning{background:rgba(230,126,34,.08);border-color:var(--warn);color:#f39c12}
+.alert.info{background:rgba(41,128,185,.08);border-color:var(--info);color:#5dade2}
+.alert.success{background:rgba(39,174,96,.08);border-color:var(--success);color:#2ecc71}
+.alert.danger{background:rgba(192,57,43,.08);border-color:var(--danger);color:#e74c3c}
+.alert-icon{flex-shrink:0;font-size:1rem;margin-top:.05rem}
+
+/* CHECKLIST */
+.checklist{list-style:none;margin:.8rem 0}
+.checklist li{display:flex;align-items:flex-start;gap:.7rem;padding:.4rem 0;font-size:.75rem;color:var(--silver);border-bottom:1px solid rgba(255,255,255,.04)}
+.checklist li:last-child{border-bottom:none}
+.check-box{width:18px;height:18px;border:1px solid var(--border);flex-shrink:0;margin-top:.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.7rem;transition:all .2s}
+.check-box.done{background:var(--success);border-color:var(--success);color:white}
+
+/* LINKS */
+.ext-link{color:var(--gold);text-decoration:none;border-bottom:1px dotted rgba(201,169,110,.4)}
+.ext-link:hover{border-bottom-style:solid}
+
+/* TABLE */
+.doc-table{width:100%;border-collapse:collapse;margin:.8rem 0;font-size:.75rem}
+.doc-table th{background:rgba(255,255,255,.04);color:var(--silver);padding:.6rem 1rem;text-align:left;font-weight:500;letter-spacing:.05em;border-bottom:1px solid var(--border)}
+.doc-table td{padding:.6rem 1rem;border-bottom:1px solid rgba(255,255,255,.04);color:var(--light);vertical-align:top}
+.doc-table tr:hover td{background:rgba(255,255,255,.02)}
+.tag{display:inline-flex;align-items:center;padding:.15rem .5rem;font-size:.6rem;letter-spacing:.1em;font-weight:600;text-transform:uppercase}
+.tag.free{background:rgba(39,174,96,.15);color:#27ae60;border:1px solid rgba(39,174,96,.3)}
+.tag.paid{background:rgba(230,126,34,.12);color:#e67e22;border:1px solid rgba(230,126,34,.25)}
+.tag.req{background:rgba(192,57,43,.12);color:#e74c3c;border:1px solid rgba(192,57,43,.25)}
+
+/* PROGRESS */
+.deploy-progress{background:var(--charcoal);border:1px solid var(--border);padding:1.5rem;margin-bottom:2rem}
+.dp-title{font-size:.6rem;letter-spacing:.25em;text-transform:uppercase;color:var(--gold);margin-bottom:1rem}
+.dp-bar-wrap{height:8px;background:rgba(255,255,255,.06);border-radius:4px;overflow:hidden;margin-bottom:.5rem}
+.dp-bar{height:100%;background:linear-gradient(90deg,var(--gold),var(--gold2));border-radius:4px;transition:width 1s ease}
+.dp-stats{display:flex;justify-content:space-between;font-size:.62rem;color:var(--midgray)}
+
+/* RESPONSIVE */
+@media(max-width:768px){
+  .doc-sidebar{display:none}
+  .doc-content{margin-left:0;padding:2rem 1.5rem}
+  .doc-nav{padding:1rem 1.5rem}
+  .doc-nav-links{display:none}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<div class="doc-nav">
+  <div class="doc-nav-logo">SMYLLC · Guide</div>
+  <div class="doc-nav-links">
+    <a href="#emailjs">EmailJS</a>
+    <a href="#netlify">Netlify</a>
+    <a href="#ga4">Analytics</a>
+    <a href="#domaine">Domaine</a>
+    <a href="#brevo">Newsletter</a>
+    <a href="#checklist">Checklist</a>
+  </div>
+</div>
+
+<!-- SIDEBAR -->
+<div class="doc-sidebar">
+  <div class="doc-sidebar-section">
+    <div class="doc-sidebar-title">Configuration</div>
+    <a href="#emailjs" class="doc-sidebar-link active">
+      <div class="step-num">1</div> EmailJS — Formulaires
+    </a>
+    <a href="#netlify" class="doc-sidebar-link">
+      <div class="step-num">2</div> Netlify — Déploiement
+    </a>
+    <a href="#ga4" class="doc-sidebar-link">
+      <div class="step-num">3</div> Google Analytics 4
+    </a>
+    <a href="#domaine" class="doc-sidebar-link">
+      <div class="step-num">4</div> Nom de Domaine
+    </a>
+    <a href="#brevo" class="doc-sidebar-link">
+      <div class="step-num">5</div> Brevo — Newsletter
+    </a>
+    <a href="#photos" class="doc-sidebar-link">
+      <div class="step-num">6</div> Vos Photos Réelles
+    </a>
+  </div>
+  <div class="doc-sidebar-section">
+    <div class="doc-sidebar-title">Finalisation</div>
+    <a href="#admin" class="doc-sidebar-link">
+      <div class="step-num">7</div> Panneau Admin
+    </a>
+    <a href="#seo" class="doc-sidebar-link">
+      <div class="step-num">8</div> SEO Final
+    </a>
+    <a href="#maintenance" class="doc-sidebar-link">
+      <div class="step-num">9</div> Maintenance
+    </a>
+    <a href="#checklist" class="doc-sidebar-link">
+      <div class="step-num">✓</div> Checklist Finale
+    </a>
+  </div>
+  <div style="padding:1.5rem;border-top:1px solid var(--border);margin-top:1rem">
+    <div style="font-size:.6rem;color:var(--midgray);line-height:1.8">
+      SMYLLC Photography Studio<br>
+      Guide de déploiement v2.0<br>
+      <span style="color:var(--gold)">Mise à jour : Mai 2025</span>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN CONTENT -->
+<main class="doc-content">
+
+  <!-- INTRO -->
+  <div style="margin-bottom:3rem">
+    <div style="font-size:.6rem;letter-spacing:.3em;text-transform:uppercase;color:var(--gold);margin-bottom:.8rem">Documentation Technique</div>
+    <h1 style="font-family:var(--ff-d);font-size:2.5rem;font-weight:400;color:var(--white);line-height:1.2;margin-bottom:1rem">
+      Guide de Déploiement<br><span style="color:var(--gold)">SMYLLC Photography Studio</span>
+    </h1>
+    <p style="font-size:.85rem;color:var(--silver);max-width:600px;line-height:1.9">
+      Ce guide couvre toutes les étapes nécessaires pour mettre le site SMYLLC en production — de la configuration EmailJS au déploiement Netlify, en passant par le nom de domaine et la newsletter.
+    </p>
+    <div style="display:flex;gap:1rem;margin-top:1.5rem;flex-wrap:wrap">
+      <div style="background:rgba(39,174,96,.1);border:1px solid rgba(39,174,96,.3);padding:.5rem 1rem;font-size:.7rem;color:#27ae60">✅ Site : 100% complet (81/81)</div>
+      <div style="background:rgba(41,128,185,.1);border:1px solid rgba(41,128,185,.3);padding:.5rem 1rem;font-size:.7rem;color:#3498db">ℹ️ Configuration estimée : 2-3 heures</div>
+      <div style="background:rgba(201,169,110,.1);border:1px solid rgba(201,169,110,.3);padding:.5rem 1rem;font-size:.7rem;color:var(--gold)">💰 Coût mensuel : 0 à 15 USD</div>
+    </div>
+  </div>
+
+  <!-- PROGRESS TRACKER -->
+  <div class="deploy-progress">
+    <div class="dp-title">Progression du Déploiement</div>
+    <div class="dp-bar-wrap"><div class="dp-bar" id="progressBar" style="width:0%"></div></div>
+    <div class="dp-stats">
+      <span id="progressText">0 / 9 étapes complètes</span>
+      <span id="progressPct">0%</span>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════
+       ÉTAPE 1 — EMAILJS
+  ═══════════════════════════════════════════════ -->
+  <section class="doc-section" id="emailjs">
+    <div class="doc-section-header">
+      <div class="doc-section-num">1</div>
+      <div class="doc-section-title">Configurer EmailJS</div>
+      <span class="doc-section-badge badge-required">Requis</span>
+      <span class="doc-section-badge badge-free">Gratuit</span>
+    </div>
+
+    <div class="alert info">
+      <div class="alert-icon">ℹ️</div>
+      <div>EmailJS permet d'envoyer les messages du formulaire directement dans votre boîte email, <strong>sans aucun serveur backend</strong>. Gratuit jusqu'à 200 emails/mois.</div>
+    </div>
+
+    <div class="step-card critical">
+      <div class="step-card-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        Étape 1.1 — Créer un compte EmailJS
+      </div>
+      <div class="step-card-desc">
+        Rendez-vous sur <a href="https://emailjs.com" target="_blank" rel="noopener noreferrer" class="ext-link">emailjs.com</a> et créez un compte gratuit avec votre email professionnel.
+      </div>
+    </div>
+
+    <div class="step-card critical">
+      <div class="step-card-title">Étape 1.2 — Connecter votre service email</div>
+      <div class="step-card-desc">
+        Dans EmailJS → <strong>Email Services</strong> → <strong>Add New Service</strong> → choisir <strong>Gmail</strong> (ou votre fournisseur) → Autoriser l'accès → Nommer le service <code style="background:rgba(255,255,255,.08);padding:.1rem .3rem;color:var(--gold)">service_smyllc</code>
+      </div>
+    </div>
+
+    <div class="step-card critical">
+      <div class="step-card-title">Étape 1.3 — Créer le template email</div>
+      <div class="step-card-desc">
+        EmailJS → <strong>Email Templates</strong> → <strong>Create New Template</strong><br>
+        Nommer le template : <code style="background:rgba(255,255,255,.08);padding:.1rem .3rem;color:var(--gold)">template_contact</code><br><br>
+        Copier ce contenu dans le template :
+      </div>
+      <div class="code-block">
+<span class="comment">// Sujet du mail :</span>
+<span class="highlight">Nouvelle demande SMYLLC — {{service_type}} de {{from_name}}</span>
+
+<span class="comment">// Corps du mail :</span>
+Nom : {{from_name}}
+Email : {{from_email}}
+Service : {{service_type}}
+Message : {{message}}
+
+Répondre à : {{reply_to}}
+      </div>
+    </div>
+
+    <div class="step-card critical">
+      <div class="step-card-title">Étape 1.4 — Récupérer la clé publique</div>
+      <div class="step-card-desc">
+        EmailJS → <strong>Account</strong> → <strong>General</strong> → copier votre <strong>Public Key</strong><br><br>
+        Ouvrir <code style="background:rgba(255,255,255,.08);padding:.1rem .3rem;color:var(--gold)">SMYLLC-ultra-securise.html</code> dans un éditeur texte et chercher :
+      </div>
+      <div class="code-block">
+<span class="comment">// Chercher cette ligne (vers le début du script) :</span>
+<span class="key">const</span> EMAILJS_KEY = <span class="str">'YOUR_PUBLIC_KEY'</span>;
+
+<span class="comment">// Remplacer par :</span>
+<span class="key">const</span> EMAILJS_KEY = <span class="highlight">'VoTrEcLePuBLiQuE123'</span>; <span class="comment">// Votre vraie clé</span>
+      </div>
+      <div class="alert warning">
+        <div class="alert-icon">⚠️</div>
+        <div>La clé publique EmailJS est visible dans le code HTML — c'est normal et voulu. Ne confondez pas avec votre clé privée qui, elle, ne doit jamais être exposée.</div>
+      </div>
+    </div>
+
+    <div class="step-card success">
+      <div class="step-card-title">✅ Test EmailJS</div>
+      <div class="step-card-desc">
+        Ouvrez le site → remplissez le formulaire de contact → envoyez → vérifiez votre boîte email dans les 2 minutes. Si le mail n'arrive pas, vérifiez le dossier Spam.
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════
+       ÉTAPE 2 — NETLIFY
+  ═══════════════════════════════════════════════ -->
+  <section class="doc-section" id="netlify">
+    <div class="doc-section-header">
+      <div class="doc-section-num">2</div>
+      <div class="doc-section-title">Déployer sur Netlify</div>
+      <span class="doc-section-badge badge-required">Requis</span>
+      <span class="doc-section-badge badge-free">Gratuit</span>
+    </div>
+
+    <div class="alert success">
+      <div class="alert-icon">✅</div>
+      <div>Netlify est la méthode la plus simple. Déploiement en <strong>30 secondes</strong>, HTTPS automatique, CDN mondial inclus. Plan gratuit largement suffisant pour SMYLLC.</div>
+    </div>
+
+    <div class="step-card important">
+      <div class="step-card-title">Méthode A — Glisser-Déposer (Le plus rapide)</div>
+      <div class="step-card-desc">
+        1. Aller sur <a href="https://app.netlify.com/drop" target="_blank" rel="noopener noreferrer" class="ext-link">app.netlify.com/drop</a><br>
+        2. Créer un dossier <code style="background:rgba(255,255,255,.08);padding:.1rem .3rem;color:var(--gold)">smyllc-site/</code> contenant :<br>
+        &nbsp;&nbsp;• <code style="color:var(--gold)">index.html</code> (renommer SMYLLC-ultra-securise.html)<br>
+        &nbsp;&nbsp;• <code style="color:var(--gold)">admin.html</code> (renommer SMYLLC-admin.html)<br>
+        3. Glisser ce dossier dans la zone de dépôt Netlify<br>
+        4. Votre site est en ligne ! URL générée automatiquement.
+      </div>
+      <div class="alert warning">
+        <div class="alert-icon">⚠️</div>
+        <div>Renommer <code>SMYLLC-ultra-securise.html</code> en <code>index.html</code> est obligatoire — c'est le fichier que Netlify charge par défaut.</div>
+      </div>
+    </div>
+
+    <div class="step-card optional">
+      <div class="step-card-title">Méthode B — Via GitHub (Recommandé pour les mises à jour)</div>
+      <div class="step-card-desc">
+        1. Créer un compte <a href="https://github.com" target="_blank" rel="noopener noreferrer" class="ext-link">GitHub</a> (gratuit)<br>
+        2. Nouveau repository → nommer <code style="color:var(--gold)">smyllc-website</code> → Public ou Private<br>
+        3. Uploader les fichiers dans le repo<br>
+        4. Sur Netlify → <strong>New site from Git</strong> → choisir le repo<br>
+        5. Chaque fois que vous modifiez un fichier sur GitHub → le site se met à jour automatiquement
+      </div>
+    </div>
+
+    <div class="step-card important">
+      <div class="step-card-title">Créer le fichier _redirects (obligatoire pour la navigation SPA)</div>
+      <div class="step-card-desc">
+        Créer un fichier nommé exactement <code style="color:var(--gold)">_redirects</code> (sans extension) dans le même dossier que index.html :
+      </div>
+      <div class="code-block">/* /index.html 200</div>
+      <div class="step-card-desc">
+        Ce fichier dit à Netlify de toujours servir index.html pour toutes les URLs — indispensable pour le site SPA (Single Page Application).
+      </div>
+    </div>
+
+    <div class="step-card important">
+      <div class="step-card-title">Créer le fichier netlify.toml (sécurité HTTPS)</div>
+      <div class="step-card-desc">
+        Créer un fichier <code style="color:var(--gold)">netlify.toml</code> dans le dossier du site :
+      </div>
+      <div class="code-block"><span class="highlight">[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "geolocation=(), microphone=(), camera=()"
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"</span>
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200</div>
+      <div class="step-card-desc">
+        Ce fichier configure les en-têtes de sécurité HTTPS directement au niveau du serveur, renforçant encore la protection du site.
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════
+       ÉTAPE 3 — GOOGLE ANALYTICS
+  ═══════════════════════════════════════════════ -->
+  <section class="doc-section" id="ga4">
+    <div class="doc-section-header">
+      <div class="doc-section-num">3</div>
+      <div class="doc-section-title">Google Analytics 4</div>
+      <span class="doc-section-badge badge-optional">Optionnel</span>
+      <span class="doc-section-badge badge-free">Gratuit</span>
+    </div>
+
+    <div class="alert info">
+      <div class="alert-icon">ℹ️</div>
+      <div>GA4 est déjà intégré dans le code mais désactivé. Il s'active automatiquement après le consentement cookie du visiteur. Respect RGPD garanti.</div>
+    </div>
+
+    <div class="step-card important">
+      <div class="step-card-title">Configurer GA4 en 3 étapes</div>
+      <div class="step-card-desc">
+        1. Aller sur <a href="https://analytics.google.com" target="_blank" rel="noopener noreferrer" class="ext-link">analytics.google.com</a><br>
+        2. Créer une propriété → saisir <strong>smyllc.ci</strong> → obtenir l'<strong>ID de mesure</strong> (format : G-XXXXXXXXXX)<br>
+        3. Dans <code style="color:var(--gold)">index.html</code>, chercher et remplacer :
+      </div>
+      <div class="code-block"><span class="comment">// Chercher :</span>
+data-ga-id=<span class="str">"G-XXXXXXXXXX"</span>
+
+<span class="comment">// Remplacer par votre vrai ID :</span>
+data-ga-id=<span class="highlight">"G-ABC123DEF4"</span></div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════
+       ÉTAPE 4 — NOM DE DOMAINE
+  ═══════════════════════════════════════════════ -->
+  <section class="doc-section" id="domaine">
+    <div class="doc-section-header">
+      <div class="doc-section-num">4</div>
+      <div class="doc-section-title">Nom de Domaine smyllc.ci</div>
+      <span class="doc-section-badge badge-optional">Recommandé</span>
+      <span class="doc-section-badge badge-paid">~15 USD/an</span>
+    </div>
+
+    <table class="doc-table">
+      <thead><tr><th>Registrar</th><th>Extension</th><th>Prix/an</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td><a href="https://nic.ci" target="_blank" rel="noopener noreferrer" class="ext-link">NIC.ci (officiel)</a></td><td>.ci</td><td>~25 USD</td><td>Domaine ivoirien officiel — recommandé</td></tr>
+        <tr><td><a href="https://namecheap.com" target="_blank" rel="noopener noreferrer" class="ext-link">Namecheap</a></td><td>.com</td><td>~12 USD</td><td>smyllc.com — si .ci non disponible</td></tr>
+        <tr><td><a href="https://cloudflare.com" target="_blank" rel="noopener noreferrer" class="ext-link">Cloudflare</a></td><td>.com</td><td>~10 USD</td><td>Prix coûtant + protection DDoS gratuite</td></tr>
+      </tbody>
+    </table>
+
+    <div class="step-card important">
+      <div class="step-card-title">Connecter le domaine à Netlify</div>
+      <div class="step-card-desc">
+        1. Netlify → votre site → <strong>Domain settings</strong> → <strong>Add custom domain</strong><br>
+        2. Saisir <code style="color:var(--gold)">smyllc.ci</code> → Netlify affiche 2 DNS records à configurer<br>
+        3. Chez votre registrar → <strong>DNS Management</strong> → ajouter les enregistrements :<br><br>
+        <strong>Type A :</strong> <code style="color:var(--gold)">smyllc.ci</code> → IP fournie par Netlify<br>
+        <strong>Type CNAME :</strong> <code style="color:var(--gold)">www.smyllc.ci</code> → <code style="color:var(--gold)">votre-site.netlify.app</code><br><br>
+        4. Propagation DNS : 15 min à 48h<br>
+        5. Netlify active HTTPS automatiquement (Let's Encrypt)
+      </div>
+    </div>
+
+    <div class="step-card important">
+      <div class="step-card-title">Mettre à jour la canonical URL dans index.html</div>
+      <div class="step-card-desc">Chercher et remplacer dans index.html :</div>
+      <div class="code-block"><span class="comment">// Avant :</span>
+&lt;link rel="canonical" href="<span class="str">https://smyllc.ci/</span>"/&gt;
+
+<span class="comment">// Vérifier que smyllc.ci est bien votre domaine final
+// Remplacer aussi dans le JSON-LD :</span>
+<span class="key">"url"</span>: <span class="highlight">"https://smyllc.ci"</span></div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════
+       ÉTAPE 5 — BREVO NEWSLETTER
+  ═══════════════════════════════════════════════ -->
+  <section class="doc-section" id="brevo">
+    <div class="doc-section-header">
+      <div class="doc-section-num">5</div>
+      <div class="doc-section-title">Brevo — Newsletter</div>
+      <span class="doc-section-badge badge-optional">Recommandé</span>
+      <span class="doc-section-badge badge-free">Gratuit 300/j</span>
+    </div>
+
+    <div class="alert success">
+      <div class="alert-icon">✅</div>
+      <div>Brevo (ex-Sendinblue) est gratuit jusqu'à <strong>300 emails/jour</strong> et <strong>contacts illimités</strong>. Parfait pour démarrer.</div>
+    </div>
+
+    <div class="step-card important">
+      <div class="step-card-title">Configurer Brevo en 4 étapes</div>
+      <div class="step-card-desc">
+        1. Créer un compte sur <a href="https://brevo.com" target="_blank" rel="noopener noreferrer" class="ext-link">brevo.com</a><br>
+        2. <strong>Contacts</strong> → <strong>Lists</strong> → créer une liste "Newsletter SMYLLC"<br>
+        3. <strong>SMTP & API</strong> → <strong>API Keys</strong> → créer une clé API<br>
+        4. Dans <code style="color:var(--gold)">index.html</code>, trouver la fonction <code style="color:var(--gold)">nlSubmit</code> et remplacer le <code style="color:var(--gold)">setTimeout(doSuccess, 800)</code> par :
+      </div>
+      <div class="code-block"><span class="comment">// Remplacer le setTimeout de simulation par :</span>
+fetch(<span class="str">'https://api.brevo.com/v3/contacts'</span>, {
+  method: <span class="str">'POST'</span>,
+  headers: {
+    <span class="str">'accept'</span>: <span class="str">'application/json'</span>,
+    <span class="str">'api-key'</span>: <span class="highlight">'VOTRE_CLE_API_BREVO'</span>,
+    <span class="str">'content-type'</span>: <span class="str">'application/json'</span>
+  },
+  body: JSON.stringify({
+    email: email,
+    listIds: [<span class="highlight">1</span>], <span class="comment">// ID de votre liste Brevo</span>
+    updateEnabled: true
+  })
+})
+.then(r => r.ok ? doSuccess() : doError())
+.catch(doError);</div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════
+       ÉTAPE 6 — VOS PHOTOS
+  ═══════════════════════════════════════════════ -->
+  <section class="doc-section" id="photos">
+    <div class="doc-section-header">
+      <div class="doc-section-num">6</div>
+      <div class="doc-section-title">Remplacer les Photos Unsplash</div>
+      <span class="doc-section-badge badge-required">Priorité 1</span>
+    </div>
+
+    <div class="alert danger">
+      <div class="alert-icon">🚨</div>
+      <div>C'est l'amélioration la plus impactante ! Toutes les photos actuelles sont des placeholders Unsplash. Les remplacer par vos vraies photos SMYLLC est <strong>indispensable</strong> pour la crédibilité.</div>
+    </div>
+
+    <div class="step-card critical">
+      <div class="step-card-title">Via le panneau Admin (recommandé)</div>
+      <div class="step-card-desc">
+        1. Ouvrir <code style="color:var(--gold)">SMYLLC-admin.html</code><br>
+        2. Se connecter (admin / SMYLLC@2025! → changer après !)<br>
+        3. Aller dans <strong>Photos & Portfolio</strong><br>
+        4. Glisser-déposer vos photos ou cliquer "Ajouter des Photos"<br>
+        5. Assigner la catégorie (Portrait, Mariage, Mode...)<br>
+        6. Publier → les photos apparaissent dans la galerie
+      </div>
+    </div>
+
+    <div class="step-card important">
+      <div class="step-card-title">Recommandations photos pour le site</div>
+      <div class="step-card-desc">
+        Pour un site optimal, préparer au minimum :
+      </div>
+      <table class="doc-table">
+        <thead><tr><th>Section</th><th>Nombre</th><th>Format</th><th>Taille max</th></tr></thead>
+        <tbody>
+          <tr><td>Hero (slides)</td><td>4 photos</td><td>Paysage 16:9</td><td>500 KB/photo</td></tr>
+          <tr><td>Portfolio Portrait</td><td>8-12</td><td>Portrait 3:4</td><td>300 KB/photo</td></tr>
+          <tr><td>Portfolio Mariage</td><td>8-12</td><td>Mixte</td><td>300 KB/photo</td></tr>
+          <tr><td>Portfolio Mode</td><td>6-8</td><td>Portrait 3:4</td><td>300 KB/photo</td></tr>
+          <tr><td>À Propos (équipe)</td><td>3 photos</td><td>Portrait carré</td><td>200 KB/photo</td></tr>
+          <tr><td>Blog articles</td><td>1/article</td><td>Paysage 16:10</td><td>200 KB/photo</td></tr>
+        </tbody>
+      </table>
+      <div class="alert info">
+        <div class="alert-icon">💡</div>
+        <div>Utiliser <a href="https://squoosh.app" target="_blank" rel="noopener noreferrer" class="ext-link">squoosh.app</a> pour compresser vos photos avant upload — qualité identique, 5x moins lourd.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════
+       ÉTAPE 7 — PANNEAU ADMIN
+  ═══════════════════════════════════════════════ -->
+  <section class="doc-section" id="admin">
+    <div class="doc-section-header">
+      <div class="doc-section-num">7</div>
+      <div class="doc-section-title">Sécuriser le Panneau Admin</div>
+      <span class="doc-section-badge badge-required">Urgent</span>
+    </div>
+
+    <div class="alert danger">
+      <div class="alert-icon">🚨</div>
+      <div>Changer les identifiants par défaut <strong>immédiatement</strong> après la première connexion. Ne jamais déployer le panneau admin avec les credentials par défaut.</div>
+    </div>
+
+    <div class="step-card critical">
+      <div class="step-card-title">Changer les identifiants admin</div>
+      <div class="step-card-desc">
+        1. Ouvrir <code style="color:var(--gold)">SMYLLC-admin.html</code><br>
+        2. Se connecter avec : admin / SMYLLC@2025!<br>
+        3. Aller dans <strong>Paramètres → Sécurité & Accès</strong><br>
+        4. Saisir un nouveau identifiant et un nouveau mot de passe fort<br>
+        5. Cliquer "Mettre à jour les identifiants"
+      </div>
+      <div class="alert warning">
+        <div class="alert-icon">⚠️</div>
+        <div>Règles pour un bon mot de passe admin : <strong>16+ caractères</strong>, majuscules + minuscules + chiffres + symboles. Ex: <code style="color:var(--gold)">Sm!LLC_2025#Ph0t0</code></div>
+      </div>
+    </div>
+
+    <div class="step-card important">
+      <div class="step-card-title">Accès admin en production</div>
+      <div class="step-card-desc">
+        L'admin est accessible à l'URL : <code style="color:var(--gold)">https://smyllc.ci/admin.html</code><br><br>
+        Pour une sécurité maximale en production, envisager :<br>
+        • Renommer admin.html en un nom aléatoire : <code style="color:var(--gold)">gestion-7x9k2.html</code><br>
+        • Ajouter une protection par mot de passe au niveau Netlify (Netlify Identity)<br>
+        • Restreindre l'accès par IP si vous avez une IP fixe
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════
+       ÉTAPE 8 — SEO FINAL
+  ═══════════════════════════════════════════════ -->
+  <section class="doc-section" id="seo">
+    <div class="doc-section-header">
+      <div class="doc-section-num">8</div>
+      <div class="doc-section-title">SEO — Actions Finales</div>
+      <span class="doc-section-badge badge-optional">Important</span>
+    </div>
+
+    <div class="step-card important">
+      <div class="step-card-title">Créer le sitemap.xml</div>
+      <div class="step-card-desc">Créer le fichier <code style="color:var(--gold)">sitemap.xml</code> dans le dossier du site :</div>
+      <div class="code-block">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"&gt;
+  &lt;url&gt;&lt;loc&gt;https://smyllc.ci/&lt;/loc&gt;&lt;priority&gt;1.0&lt;/priority&gt;&lt;/url&gt;
+  &lt;url&gt;&lt;loc&gt;https://smyllc.ci/#about&lt;/loc&gt;&lt;priority&gt;0.8&lt;/priority&gt;&lt;/url&gt;
+  &lt;url&gt;&lt;loc&gt;https://smyllc.ci/#services&lt;/loc&gt;&lt;priority&gt;0.9&lt;/priority&gt;&lt;/url&gt;
+  &lt;url&gt;&lt;loc&gt;https://smyllc.ci/#portfolio&lt;/loc&gt;&lt;priority&gt;0.8&lt;/priority&gt;&lt;/url&gt;
+  &lt;url&gt;&lt;loc&gt;https://smyllc.ci/#contact&lt;/loc&gt;&lt;priority&gt;0.7&lt;/priority&gt;&lt;/url&gt;
+&lt;/urlset&gt;</div>
+    </div>
+
+    <div class="step-card important">
+      <div class="step-card-title">Créer le robots.txt</div>
+      <div class="step-card-desc">Créer le fichier <code style="color:var(--gold)">robots.txt</code> :</div>
+      <div class="code-block">User-agent: *
+Allow: /
+Disallow: /admin.html
+Sitemap: https://smyllc.ci/sitemap.xml</div>
+    </div>
+
+    <div class="step-card important">
+      <div class="step-card-title">Soumettre à Google Search Console</div>
+      <div class="step-card-desc">
+        1. <a href="https://search.google.com/search-console" target="_blank" rel="noopener noreferrer" class="ext-link">search.google.com/search-console</a> → Ajouter propriété → saisir <code style="color:var(--gold)">https://smyllc.ci</code><br>
+        2. Vérifier la propriété (méthode DNS recommandée)<br>
+        3. <strong>Sitemaps</strong> → soumettre <code style="color:var(--gold)">https://smyllc.ci/sitemap.xml</code><br>
+        4. Attendre 2-7 jours pour l'indexation Google
+      </div>
+    </div>
+
+    <div class="step-card optional">
+      <div class="step-card-title">Créer une fiche Google Business Profile</div>
+      <div class="step-card-desc">
+        1. <a href="https://business.google.com" target="_blank" rel="noopener noreferrer" class="ext-link">business.google.com</a> → Ajouter votre entreprise<br>
+        2. Saisir : SMYLLC Photography Studio · Cocody Riviera 2, Abidjan<br>
+        3. Catégorie principale : <strong>Photographe</strong><br>
+        4. Ajouter photos, horaires, description<br>
+        5. Recueillir des avis → améliore énormément le référencement local
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════
+       ÉTAPE 9 — MAINTENANCE
+  ═══════════════════════════════════════════════ -->
+  <section class="doc-section" id="maintenance">
+    <div class="doc-section-header">
+      <div class="doc-section-num">9</div>
+      <div class="doc-section-title">Maintenance & Suivi</div>
+      <span class="doc-section-badge badge-optional">Continu</span>
+    </div>
+
+    <table class="doc-table">
+      <thead><tr><th>Fréquence</th><th>Action</th><th>Durée</th></tr></thead>
+      <tbody>
+        <tr><td>Hebdomadaire</td><td>Lire et répondre aux messages reçus via le formulaire</td><td>15 min</td></tr>
+        <tr><td>Mensuelle</td><td>Ajouter 3-5 nouvelles photos au portfolio via l'admin</td><td>30 min</td></tr>
+        <tr><td>Mensuelle</td><td>Publier 1 article de blog (conseils, coulisses, projet récent)</td><td>1h</td></tr>
+        <tr><td>Trimestrielle</td><td>Vérifier les stats Google Analytics — adapter le contenu</td><td>30 min</td></tr>
+        <tr><td>Trimestrielle</td><td>Changer le mot de passe admin</td><td>5 min</td></tr>
+        <tr><td>Annuelle</td><td>Renouveler le nom de domaine</td><td>5 min</td></tr>
+        <tr><td>Annuelle</td><td>Mettre à jour les prix et informations des services</td><td>30 min</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════
+       CHECKLIST FINALE
+  ═══════════════════════════════════════════════ -->
+  <section class="doc-section" id="checklist">
+    <div class="doc-section-header">
+      <div class="doc-section-num">✓</div>
+      <div class="doc-section-title">Checklist de Lancement</div>
+    </div>
+
+    <div class="step-card critical">
+      <div class="step-card-title">🔴 Avant mise en ligne — Obligatoire</div>
+      <ul class="checklist" id="checklistCritical">
+        <li><div class="check-box" onclick="toggleCheck(this)"></div><div>Configurer EmailJS et tester l'envoi de formulaire</div></li>
+        <li><div class="check-box" onclick="toggleCheck(this)"></div><div>Remplacer les photos Unsplash par les vraies photos SMYLLC</div></li>
+        <li><div class="check-box" onclick="toggleCheck(this)"></div><div>Changer les identifiants admin (admin / SMYLLC@2025!)</div></li>
+        <li><div class="check-box" onclick="toggleCheck(this)"></div><div>Renommer SMYLLC-ultra-securise.html en index.html</div></li>
+        <li><div class="check-box" onclick="toggleCheck(this)"></div><div>Créer le fichier _redirects pour Netlify</div></li>
+        <li><div class="check-box" onclick="toggleCheck(this)"></div><div>Créer le fichier netlify.toml</div></li>
+        <li><div class="check-box" onclick="toggleCheck(this)"></div><div>Déployer sur Netlify et tester l'URL</div></li>
+        <li><div class="check-box" onclick="toggleCheck(this)"></div><div>Tester le site sur mobile (iPhone + Android)</div></li>
+        <li><div class="check-box" onclick="toggleCheck(this)"></div><div>Tester tous les formulaires (contact + booking)</div></li>
+        <li><div class="check-box" onclick="toggleCheck(this)"></div><div>Vérifier que les liens sociaux (Instagram, TikTok...) fonctionnent</div></li>
+      </ul>
+    </div>
+
+    <div class="step-card important" style="margin-top:1rem">
+      <div class="step-card-title">🟡 Dans les 7 jours — Important</div>
+      <ul class="checklist" id="checklistImportant">
+        <li><div class="check-box" onclick="toggleCheck(this)"></div><div>Acheter et connecter le domaine smyllc.ci</div></li>
+        <li><div class="check-box" onclick="toggleCheck(this)"></div><div>Configurer Google Analytics 4</div></li>
+        <li><div class="check-box" onclick="toggleCheck(this)"></div><div>Créer sitemap.xml et robots.txt</div></li>
+        <li><div class="check-box" onclick="toggleCheck(this)"></div><div>Soumettre le sitemap à Google Search Console</div></li>
+        <li><div class="check-box" onclick="toggleCheck(this)"></div><div>Configurer Brevo pour la newsletter</div></li>
+        <li><div class="check-box" onclick="toggleCheck(this)"></div><div>Créer/optimiser la fiche Google Business</div></li>
+        <li><div class="check-box" onclick="toggleCheck(this)"></div><div>Partager le site sur Instagram, Facebook et TikTok</div></li>
+      </ul>
+    </div>
+
+    <div class="step-card optional" style="margin-top:1rem">
+      <div class="step-card-title">🔵 Dans le mois — Croissance</div>
+      <ul class="checklist" id="checklistOptional">
+        <li><div class="check-box" onclick="toggleCheck(this)"></div><div>Publier le premier article de blog (conseils mariage)</div></li>
+        <li><div class="check-box" onclick="toggleCheck(this)"></div><div>Ajouter des vidéos YouTube réelles (remplacer les placeholders)</div></li>
+        <li><div class="check-box" onclick="toggleCheck(this)"></div><div>Collecter les premiers avis Google de clients satisfaits</div></li>
+        <li><div class="check-box" onclick="toggleCheck(this)"></div><div>Tester l'installation PWA sur mobile</div></li>
+        <li><div class="check-box" onclick="toggleCheck(this)"></div><div>Activer les notifications push (optionnel)</div></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- RÉSUMÉ COÛT -->
+  <div style="background:var(--charcoal);border:1px solid rgba(201,169,110,.2);padding:2rem;margin-bottom:3rem">
+    <div style="font-family:var(--ff-d);font-size:1.3rem;color:var(--white);margin-bottom:1.5rem">💰 Résumé des Coûts Mensuels</div>
+    <table class="doc-table">
+      <thead><tr><th>Service</th><th>Plan</th><th>Coût</th></tr></thead>
+      <tbody>
+        <tr><td>Netlify (hébergement)</td><td>Gratuit (Starter)</td><td style="color:var(--success)">0 USD/mois</td></tr>
+        <tr><td>EmailJS (formulaires)</td><td>Gratuit (200 emails/mois)</td><td style="color:var(--success)">0 USD/mois</td></tr>
+        <tr><td>Google Analytics 4</td><td>Gratuit</td><td style="color:var(--success)">0 USD/mois</td></tr>
+        <tr><td>Brevo (newsletter)</td><td>Gratuit (300 emails/jour)</td><td style="color:var(--success)">0 USD/mois</td></tr>
+        <tr><td>Nom de domaine .ci</td><td>~25 USD/an</td><td style="color:var(--warn)">~2 USD/mois</td></tr>
+        <tr style="border-top:2px solid var(--gold)"><td><strong style="color:var(--white)">TOTAL</strong></td><td></td><td style="color:var(--gold);font-weight:700">~2 USD/mois</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div style="text-align:center;padding:3rem 0;border-top:1px solid var(--border)">
+    <div style="font-family:var(--ff-d);font-size:2rem;color:var(--white);margin-bottom:.5rem">SMYLLC ™</div>
+    <div style="font-size:.6rem;letter-spacing:.3em;text-transform:uppercase;color:var(--gold);margin-bottom:1rem">Photography Studio · Abidjan</div>
+    <div style="font-size:.7rem;color:var(--midgray)">studio@smyllc.com · +225 07 07 00 00 00 · Cocody Riviera 2</div>
+  </div>
+
+</main>
+
+<script>
+// Checklist interactive
+function toggleCheck(el) {
+  el.classList.toggle('done');
+  el.textContent = el.classList.contains('done') ? '✓' : '';
+  updateProgress();
+  // Sauvegarder état
+  const all = document.querySelectorAll('.check-box');
+  const state = Array.from(all).map(b => b.classList.contains('done') ? '1' : '0').join('');
+  try { localStorage.setItem('smyllc_checklist', state); } catch(e) {}
+}
+
+function updateProgress() {
+  const all   = document.querySelectorAll('.check-box');
+  const done  = document.querySelectorAll('.check-box.done');
+  const pct   = Math.round(done.length / all.length * 100);
+  const bar   = document.getElementById('progressBar');
+  const txt   = document.getElementById('progressText');
+  const pctEl = document.getElementById('progressPct');
+  if (bar)   bar.style.width = pct + '%';
+  if (txt)   txt.textContent = done.length + ' / ' + all.length + ' étapes complètes';
+  if (pctEl) pctEl.textContent = pct + '%';
+}
+
+// Restaurer état checklist
+try {
+  const saved = localStorage.getItem('smyllc_checklist');
+  if (saved) {
+    const boxes = document.querySelectorAll('.check-box');
+    saved.split('').forEach((v, i) => {
+      if (v === '1' && boxes[i]) { boxes[i].classList.add('done'); boxes[i].textContent = '✓'; }
+    });
+    updateProgress();
+  }
+} catch(e) {}
+
+// Active nav link on scroll
+const sections = document.querySelectorAll('.doc-section');
+const sideLinks = document.querySelectorAll('.doc-sidebar-link');
+window.addEventListener('scroll', () => {
+  let current = '';
+  sections.forEach(s => { if (window.scrollY >= s.offsetTop - 100) current = s.id; });
+  sideLinks.forEach(l => {
+    l.classList.remove('active');
+    if (l.getAttribute('href') === '#' + current) l.classList.add('active');
+  });
+}, { passive: true });
+
+// Copy code buttons
+document.querySelectorAll('.code-block').forEach(block => {
+  const btn = document.createElement('button');
+  btn.className = 'copy-btn';
+  btn.textContent = 'Copier';
+  btn.addEventListener('click', () => {
+    navigator.clipboard.writeText(block.innerText.replace('Copier','').trim())
+      .then(() => { btn.textContent = '✓ Copié !'; setTimeout(() => btn.textContent = 'Copier', 2000); });
+  });
+  block.style.position = 'relative';
+  block.appendChild(btn);
+});
+
+// Init progress
+updateProgress();
+</script>
+</body>
+</html>
